@@ -59,12 +59,15 @@ recr_config_template = """struct config{index} : nnet::{recr_type}_config {{
     static const unsigned n_sequence = {n_sequence};
     static const unsigned n_sequence_out = {n_sequence_out};
     static const unsigned io_type = nnet::{strategy};
+    static const unsigned initial_state = {initial_state};
     static const unsigned reuse_factor = {reuse};
     static const bool store_weights_in_bram = false;
     static const bool use_static = {static};
 }};\n"""
 
-recr_function_template = 'nnet::{recr_type}_stack<{input_t}, {output_t}, {config}>({input}, {output}, {w}, {wr}, {b}, {br});'
+# recr_function_template = 'nnet::{recr_type}_stack<{input_t}, {output_t}, {config}>({input}, {output}, {w}, {wr}, {b}, {br});'
+# add initial state
+recr_function_template = 'nnet::{recr_type}_stack<{input_t}, {output_t}, {config}>({input}, {input_2}, {output}, {w}, {wr}, {b}, {br});'
 
 recr_include_list = ['nnet_utils/nnet_recurrent.h']
 
@@ -104,6 +107,10 @@ class RecurrentConfigTemplate(LayerConfigTemplate):
             n_recr_mult = 4
         else: #GRU
             n_recr_mult = 3
+        if(params['initial_state']== 1):
+            params['initial_state'] = 1
+        else:
+            params['initial_state'] = 0
 
         recr_config = self.template.format(**params)
 
@@ -159,6 +166,10 @@ class RecurrentFunctionTemplate(FunctionCallTemplate):
 
     def format(self, node):
         params = self._default_function_params(node)
+        if(params['initial_state']==1):
+            params['input_2'] = node.get_input_variable(node.inputs[1]).name
+        else:
+            params['input_2'] = node.get_input_variable(node.inputs[0]).name
         params['w'] = node.get_weights('weight').name
         params['b'] = node.get_weights('bias').name
         params['wr'] = node.get_weights('recurrent_weight').name

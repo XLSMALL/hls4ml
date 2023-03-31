@@ -41,4 +41,10 @@ def parse_rnn_layer(keras_layer, input_names, input_shapes, data_reader, config)
     if layer['return_state']:
         raise Exception('"return_state" of {} layer is not yet supported.'.format(layer['class_name']))
 
+    # check if there is an initial_state or not
+    if (len(keras_layer['inbound_nodes'][0]) > 1):
+        layer['initial_state'] = 1 # 1 for true, 0 for false
+    else:
+        layer['initial_state'] = 0
+
     return layer, output_shape

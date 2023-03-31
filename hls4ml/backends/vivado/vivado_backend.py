@@ -7,7 +7,7 @@ from queue import Queue
 from collections.abc import Iterable
 
 from hls4ml.model.types import FixedPrecisionType, NamedType, IntegerPrecisionType
-from hls4ml.model.layers import Layer, Dense, BatchNormalization, Embedding, Conv1D, Conv2D, Conv2DBatchnorm, SeparableConv1D, SeparableConv2D, DepthwiseConv2D, Activation, ParametrizedActivation, PReLU, Softmax, Pooling1D, Pooling2D, GlobalPooling1D, GlobalPooling2D, ZeroPadding1D, ZeroPadding2D, Merge, Concatenate, Dot, Resize, Transpose, SimpleRNN, LSTM, GRU, GarNet, GarNetStack
+from hls4ml.model.layers import Layer, Dense, BatchNormalization, Embedding, Conv1D, Conv2D, Conv2DBatchnorm, SeparableConv1D, SeparableConv2D, DepthwiseConv2D, Activation, ParametrizedActivation, PReLU, Softmax, Pooling1D, Pooling2D, GlobalPooling1D, GlobalPooling2D, ZeroPadding1D, ZeroPadding2D, Merge, Concatenate, Dot, Resize, Transpose, SimpleRNN, LSTM, GRU, GarNet, GarNetStack, Bidirectional
 from hls4ml.model.attributes import Attribute
 from hls4ml.model.optimizer import get_backend_passes, layer_optimizer, model_optimizer
 from hls4ml.model.flow import register_flow
@@ -26,6 +26,7 @@ class VivadoBackend(FPGABackend):
             SimpleRNN: [Attribute('recurrent_reuse_factor', default=1), Attribute('static', value_type=bool, default=True)],
             LSTM: [Attribute('recurrent_reuse_factor', default=1), Attribute('static', value_type=bool, default=True)],
             GRU: [Attribute('recurrent_reuse_factor', default=1), Attribute('static', value_type=bool, default=True)],
+            Bidirectional: [Attribute('recurrent_reuse_factor', default=1), Attribute('static', value_type=bool, default=True)], #modified
         }
         self.attribute_map.update(extended_attrs)
 
@@ -267,6 +268,29 @@ class VivadoBackend(FPGABackend):
 
     @layer_optimizer(GRU)
     def init_gru(self, layer):
+        reuse_factor = layer.model.config.get_reuse_factor(layer)
+        layer.set_attr('recurrent_reuse_factor', reuse_factor)
+
+        index_t = IntegerPrecisionType(width=1, signed=False)
+
+        if 'table_t' not in layer.attributes:
+            layer.set_attr('table_t', FixedPrecisionType(width=18, integer=8))
+        if 'table_size' not in layer.attributes:
+            layer.set_attr('table_size', 1024)
+        if layer.model.config.is_resource_strategy(layer):
+            n_in, n_out, n_in_recr, n_out_recr = self.get_layer_mult_size(layer)
+            self.set_closest_reuse_factor(layer, n_in, n_out)
+            self.set_closest_reuse_factor(layer, n_in_recr, n_out_recr, attribute='recurrent_reuse_factor')
+            layer.weights['weight'].data = np.transpose(layer.weights['weight'].data)
+            layer.weights['recurrent_weight'].data = np.transpose(layer.weights['recurrent_weight'].data)
+            layer.set_attr('strategy', 'resource')
+        else:
+            layer.set_attr('strategy', 'latency')
+
+        layer.set_attr('index_t', index_t)
+
+    @layer_optimizer(Bidirectional)
+    def init_bidirectional(self, layer):
         reuse_factor = layer.model.config.get_reuse_factor(layer)
         layer.set_attr('recurrent_reuse_factor', reuse_factor)
 

@@ -448,7 +448,12 @@ template<class data_T, class res_T, typename CONFIG_T>
     }
 
     nnet::dense<data_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config1>(data, tmpres, param, param_b);
-    nnet::dense<res_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config2>(h_state, tmpres_state_zr, param_zr, param_br);
+    // nnet::dense<res_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config2>(h_state, tmpres_state_zr, param_zr, param_br);
+    nnet::dense<res_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config2>(h_newstate, tmpres_state_zr, param_zr, param_br);
+
+    std::cout << "value from gru_staic h_newstate: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state>(h_newstate, std::cout);
+    std::cout << " " << std::endl;
 
     // Adding the individual vectors from the multiplication of tmpres = Wx*x(t); tmpres_state_zr = Wh*h(t-1); tmpres initialized with biases -- DONE
     for(int iacc = 0; iacc < (2*CONFIG_T::n_state); iacc++) {
@@ -489,6 +494,8 @@ template<class data_T, class res_T, typename CONFIG_T>
 template<class data_T, class res_T, typename CONFIG_T>
   void gru_stack(
         data_T    data      [CONFIG_T::n_sequence*CONFIG_T::n_in],
+        //initial_state
+        data_T    initial_state [CONFIG_T::n_state],
         res_T     res[CONFIG_T::n_sequence_out*CONFIG_T::n_state],
         typename CONFIG_T::weight_t     param   [CONFIG_T::n_state*3*CONFIG_T::n_in],
         typename CONFIG_T::weight_t     param_zr[CONFIG_T::n_state*3*CONFIG_T::n_state],
@@ -503,10 +510,25 @@ template<class data_T, class res_T, typename CONFIG_T>
       #pragma HLS ARRAY_PARTITION variable=h_state complete
       #pragma HLS ARRAY_PARTITION variable=data_in complete
 
-      for(int ii = 0; ii < CONFIG_T::n_state; ii++) {
-        #pragma HLS UNROLL
-        h_state[ii] = 0;
+      if (CONFIG_T::initial_state==1){
+          for(int ii = 0; ii < CONFIG_T::n_state; ii++) {
+          #pragma HLS UNROLL
+          h_state[ii] = initial_state[ii];
+          std::cout << "value from h state: " << std::endl;
+          nnet::print_result<data_T, CONFIG_T::n_state>(h_state, std::cout);
+          std::cout << " " << std::endl;
+        }
+      } else{
+          for(int ii = 0; ii < CONFIG_T::n_state; ii++) {
+          #pragma HLS UNROLL
+          h_state[ii] = 0;
+        }        
       }
+
+      // for(int ii = 0; ii < CONFIG_T::n_state; ii++) {
+      //   #pragma HLS UNROLL
+      //   h_state[ii] = 0;
+      // }
       for(int iloop = 0; iloop < CONFIG_T::n_sequence; iloop++) {
         for(int j = 0; j < CONFIG_T::n_in; j++) {
         #pragma HLS UNROLL

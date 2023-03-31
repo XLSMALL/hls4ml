@@ -245,6 +245,8 @@ def keras_to_hls(config):
     activation_layers = ['Activation', 'LeakyReLU', 'ThresholdedReLU', 'ELU', 'PReLU', 'Softmax', 'TernaryTanh']
     # Recurrent layers
     recurrent_layers = ['SimpleRNN', 'LSTM', 'GRU']
+    # Bidirectional layer
+    bidirectional_layer = ['Bidirectional']
     #All supported layers
     supported_layers = get_supported_keras_layers() + skip_layers
 
@@ -326,7 +328,7 @@ def keras_to_hls(config):
 
         print('Layer name: {}, layer type: {}, input shapes: {}, output shape: {}'.format(layer['name'], layer['class_name'], input_shapes, output_shape))
         layer_list.append( layer )
-        if 'activation' in layer and layer['class_name'] not in activation_layers + recurrent_layers:# + qkeras_layers:
+        if 'activation' in layer and layer['class_name'] not in activation_layers + recurrent_layers + bidirectional_layer:# + qkeras_layers:
             act_layer = {}
             # Workaround for QKeras activations passed as an argument
             if isinstance(layer['activation'], dict):

@@ -1,7 +1,7 @@
 import numpy as np
 
 from hls4ml.model.optimizer import OptimizerPass
-from hls4ml.model.layers import Conv1D, Conv2D, Dense, SeparableConv1D, SeparableConv2D, LSTM, GRU
+from hls4ml.model.layers import Conv1D, Conv2D, Dense, SeparableConv1D, SeparableConv2D, LSTM, GRU, Bidirectional
 
 class ApplyResourceStrategy(OptimizerPass):
     ''' Transposes the weights to use the dense_resource matrix multiply routine '''
@@ -29,6 +29,11 @@ class ApplyResourceStrategy(OptimizerPass):
         elif isinstance(node, (LSTM, GRU)):
             node.weights['weight'].data = np.transpose(node.weights['weight'].data)
             node.weights['recurrent_weight'].data = np.transpose(node.weights['recurrent_weight'].data)
+        elif isinstance(node, Bidirectional):
+            node.weights['backward_gru_1_gru_cell_1_weight'].data = np.transpose(node.weights['backward_gru_1_gru_cell_1_weight'].data)
+            node.weights['backward_gru_1_gru_cell_1_recurrent_weight'].data = np.transpose(node.weights['backward_gru_1_gru_cell_1_recurrent_weight'].data)
+            node.weights['forward_gru_gru_cell_2_weight'].data = np.transpose(node.weights['forward_gru_gru_cell_2_weight'].data)
+            node.weights['forward_gru_gru_cell_2_recurrent_weight'].data = np.transpose(node.weights['forward_gru_gru_cell_2_recurrent_weight'].data)
         else:
             raise Exception('Unexpected layer {} with resource strategy'.format(node.class_name))
         

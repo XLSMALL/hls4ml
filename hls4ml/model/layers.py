@@ -101,8 +101,8 @@ class Layer(object):
         for attr_name, attr_value in self.attributes.items():
             exp_attr = all_attributes.pop(attr_name, None)
             if exp_attr is not None:
-                if not exp_attr.validate_value(attr_value):
-                    raise Exception('Unexpected value of attribute "{}" of layer "{}" ({}). Expected {}, got {} ({})'
+                if not (exp_attr.validate_value(attr_value) or type(attr_value) is str):
+                    raise Exception('Unexpected value of attribute "{}" of layer "{}" ({}). Expected {}, got {} ({})' # add str
                         .format(attr_name, self.name, self.class_name, exp_attr.value_type, type(attr_value), attr_value))
             else:
                 pass # TODO layer contains attribute that is not expected. we can log this for debugging
@@ -181,7 +181,6 @@ class Layer(object):
     def add_weights_variable(self, name, var_name=None, type_name=None, precision=None, data=None, quantizer=None, compression=False):
         if var_name is None:
             var_name = name + '{index}'
-
         if precision is None:
             precision, _ = self.model.config.get_precision(self, var=name)
         elif type_name is None:
@@ -954,6 +953,7 @@ class GRU(Layer):
         Attribute('recurrent_activation', value_type=str),
         Attribute('return_sequences', value_type=bool, default=False),
         Attribute('return_state', value_type=bool, default=False),
+        Attribute('initial_state'),
         ChoiceAttribute('direction', ['forward', 'backward'], default='forward'),
         Attribute('time_major', value_type=bool, default=False),
         ChoiceAttribute('apply_reset_gate', ['before', 'after'], default='after'),
@@ -1148,6 +1148,114 @@ class GarNetStack(GarNet):
 
         self._output_features = self.attributes['n_out_features'][-1]
 
+class Bidirectional(Layer):
+    _expected_attributes = [
+        # Attribute('layer'),
+        # Attribute('backward_layer'),
+        Attribute('return_state', value_type=bool, default=False),
+        Attribute('n_out_forward'),
+        Attribute('n_out_backward'),
+        Attribute('layer_type'),
+        # Attribute('backward_layer'),
+        Attribute('activation'),
+        Attribute('recurrent_activation'),
+        Attribute('n_timesteps'),
+        Attribute('n_in'),
+        Attribute('n_out'),
+        Attribute('initial_state'),
+        ChoiceAttribute('merge_mode',['sum', 'mul', 'concat', 'ave', None], default='concat'),
+
+        WeightAttribute('backward_gru_1_gru_cell_1_weight'),
+        WeightAttribute('backward_gru_1_gru_cell_1_recurrent_weight'),
+        WeightAttribute('backward_gru_1_gru_cell_1_bias'),
+        WeightAttribute('forward_gru_gru_cell_2_weight'),
+        WeightAttribute('forward_gru_gru_cell_2_recurrent_weight'),
+        WeightAttribute('forward_gru_gru_cell_2_bias'),
+        WeightAttribute('forward_gru_recurrent_bias'),
+        WeightAttribute('backward_gru_recurrent_bias'),
+
+
+        TypeAttribute('backward_gru_1_gru_cell_1_weight'),
+        TypeAttribute('backward_gru_1_gru_cell_1_recurrent_weight'),
+        TypeAttribute('backward_gru_1_gru_cell_1_bias'),
+        TypeAttribute('forward_gru_gru_cell_2_weight'),
+        TypeAttribute('forward_gru_gru_cell_2_recurrent_weight'),
+        TypeAttribute('forward_gru_gru_cell_2_bias'),
+        TypeAttribute('forward_gru_recurrent_bias'),
+        TypeAttribute('backward_gru_recurrent_bias'),
+        # WeightAttribute('backward_gru_weight'),
+        # WeightAttribute('backward_gru_recurrent_weight'),
+        # WeightAttribute('backward_gru_bias'),
+        # WeightAttribute('forward_gru_weight'),
+        # WeightAttribute('forward_gru_recurrent_weight'),
+        # WeightAttribute('forward_gru_bias'),
+
+        # TypeAttribute('backward_gru_weight'),
+        # TypeAttribute('backward_gru_recurrent_weight'),
+        # TypeAttribute('backward_gru_bias'),
+        # TypeAttribute('forward_gru_weight'),
+        # TypeAttribute('forward_gru_recurrent_weight'),
+        # TypeAttribute('forward_gru_bias')
+    ]
+    def initialize(self):
+        weights_source = [
+            ('backward_gru_1','gru_cell_1', 'kernel'),
+            ('backward_gru_1','gru_cell_1', 'recurrent_kernel'),
+            # ('backward_gru_1','gru_cell_1', 'bias'),
+            ('forward_gru','gru_cell_2', 'kernel'),
+            ('forward_gru','gru_cell_2', 'recurrent_kernel'),
+            # ('forward_gru','gru_cell_2', 'bias'),
+        ]
+        # for dname, lname, wtype in weights_source:                         
+        #     data = self.model.get_weights_data(self.name, 
+        #     '{dname}/{lname}/{wtype}'.format(dname = dname, lname=lname, wtype=wtype))
+        #     if wtype == 'kernel':
+        #         vtype = 'weight'
+        #     elif wtype == 'recurrent_kernel':
+        #         vtype = 'recurrent_weight'
+        #     else:
+        #         vtype = 'bias'
+
+        #     name = '{}_{}_{}'.format(dname, lname, vtype)
+        #     var_name = '{}_{}_{}{{index}}'.format(dname, lname, vtype)
+        #     self.add_weights_variable(name=name, var_name=var_name, data=data)
+
+        for dname, lname, wtype in weights_source:                         
+            data = self.model.get_weights_data(self.name, 
+            '{dname}/{lname}/{wtype}'.format(dname = dname, lname=lname, wtype=wtype))
+            if wtype == 'kernel':
+                vtype = 'weight'
+            else: 
+                wtype == 'recurrent_kernel'
+                vtype = 'recurrent_weight'
+            # else:
+            #     vtype = 'bias'
+
+            name = '{}_{}_{}'.format(dname, lname, vtype)
+            var_name = '{}_{}_{}{{index}}'.format(dname, lname, vtype)
+            self.add_weights_variable(name=name, var_name=var_name, data=data)
+
+            forward_biases = self.model.get_weights_data(self.name, 'forward_gru/gru_cell_2/bias')
+            backward_biases = self.model.get_weights_data(self.name, 'backward_gru_1/gru_cell_1/bias')
+
+            self.add_weights_variable(name='forward_gru_gru_cell_2_bias', var_name='forward_gru_gru_cell_2_bias{index}', data = forward_biases[0])
+            self.add_weights_variable(name='forward_gru_recurrent_bias', var_name='forward_gru_recurrent_bias{index}', data = forward_biases[1])
+
+            self.add_weights_variable(name='backward_gru_1_gru_cell_1_bias', var_name='backward_gru_1_gru_cell_1_bias{index}', data = backward_biases[0])
+            self.add_weights_variable(name='backward_gru_recurrent_bias', var_name='backward_gru_recurrent_bias{index}', data = backward_biases[1])     
+
+
+        #if self.attributes['layer']['config']['return_state']:
+        if self.attributes['return_state']:
+            shape = [self.attributes['n_out_forward'] + self.attributes['n_out_backward']]
+            dims = ['N_OUT_{}'.format(self.index)]
+        else:
+            shape = [self.attributes['n_out_forward'] + self.attributes['n_out_backward']]
+            dims = ['N_OUT_{}'.format(self.index)]
+        
+        self.add_output_variable(shape, dims)
+
+
 layer_map = {
     'Input'                  : Input,
     'InputLayer'             : Input,
@@ -1196,6 +1304,7 @@ layer_map = {
     'SimpleRNN'              : SimpleRNN,
     'LSTM'                   : LSTM,
     'GRU'                    : GRU,
+    'Bidirectional'          : Bidirectional, 
     'GarNet'                 : GarNet,
     'GarNetStack'            : GarNetStack,
     # TensorFlow-specific layers:
