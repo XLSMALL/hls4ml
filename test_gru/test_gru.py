@@ -52,21 +52,20 @@ os.environ['PATH'] = '/opt/Xilinx/Vivado/2019.2/bin:' + os.environ['PATH']
 #####################################test gru intiial_state with dense#####################################
 ###############################################################################################################
 ###############################################################################################################
-np.random.seed(1)
+np.random.seed(2)
 input_shape = (5, 2)  # Shape of the 'inputs' tensor 
 # input_shape = (5, 2) # for testing
 batch_size = 1  # Batch size
 inputs_data = np.random.rand(batch_size, *input_shape)
 
 input_dense_shape = (2,)  # Shape of the 'input_dense' tensor
-# input_dense_data = np.random.rand(batch_size, *input_dense_shape)
-input_dense_data = np.zeros((batch_size, *input_dense_shape))
+input_dense_data = np.random.rand(batch_size, *input_dense_shape)
+# input_dense_data = np.zeros((batch_size, *input_dense_shape))
 
 
 inputs = Input(shape=input_shape)
 input_dense = Input(shape=input_dense_shape)
-dense = Dense(1, bias_initializer='zero')(input_dense)
-print("dense", dense)
+dense = Dense(1)(input_dense)
 gru_layer = GRU(units=1, return_sequences=True)(inputs, dense)
 encoder = tf.keras.Model(inputs=[input_dense,inputs], outputs=gru_layer)
 
@@ -146,7 +145,7 @@ print("Configuration")
 print("-----------------------------------")
 hls_model = hls4ml.converters.convert_from_keras_model(encoder,
                                                        hls_config=config,
-                                                       output_dir='/home/xiaohan/ACME_hls4ml/hls4ml/test_GRU',
+                                                       output_dir='/home/xiaohan/HLS4ML_side_branch/hls4ml/test_gru',
                                                        #io_type = 'io_stream',
                                                        part='xc7z020clg400-1')
 print("done")

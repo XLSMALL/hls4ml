@@ -451,9 +451,9 @@ template<class data_T, class res_T, typename CONFIG_T>
     // nnet::dense<res_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config2>(h_state, tmpres_state_zr, param_zr, param_br);
     nnet::dense<res_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config2>(h_newstate, tmpres_state_zr, param_zr, param_br);
 
-    std::cout << "value from gru_staic h_newstate: " << std::endl;
-    nnet::print_result<data_T, CONFIG_T::n_state>(h_newstate, std::cout);
-    std::cout << " " << std::endl;
+    // std::cout << "value from gru_staic h_newstate: " << std::endl;
+    // nnet::print_result<data_T, CONFIG_T::n_state>(h_newstate, std::cout);
+    // std::cout << " " << std::endl;
 
     // Adding the individual vectors from the multiplication of tmpres = Wx*x(t); tmpres_state_zr = Wh*h(t-1); tmpres initialized with biases -- DONE
     for(int iacc = 0; iacc < (2*CONFIG_T::n_state); iacc++) {
@@ -514,9 +514,9 @@ template<class data_T, class res_T, typename CONFIG_T>
           for(int ii = 0; ii < CONFIG_T::n_state; ii++) {
           #pragma HLS UNROLL
           h_state[ii] = initial_state[ii];
-          std::cout << "value from h state: " << std::endl;
-          nnet::print_result<data_T, CONFIG_T::n_state>(h_state, std::cout);
-          std::cout << " " << std::endl;
+          // std::cout << "value from h state: " << std::endl;
+          // nnet::print_result<data_T, CONFIG_T::n_state>(h_state, std::cout);
+          // std::cout << " " << std::endl;
         }
       } else{
           for(int ii = 0; ii < CONFIG_T::n_state; ii++) {
