@@ -52,7 +52,7 @@ os.environ['PATH'] = '/opt/Xilinx/Vivado/2019.2/bin:' + os.environ['PATH']
 #####################################test gru intiial_state with dense#####################################
 ###############################################################################################################
 ###############################################################################################################
-np.random.seed(2)
+np.random.seed(3)
 input_shape = (5, 2)  # Shape of the 'inputs' tensor 
 # input_shape = (5, 2) # for testing
 batch_size = 1  # Batch size

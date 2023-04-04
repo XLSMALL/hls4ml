@@ -534,8 +534,10 @@ template<class data_T, class res_T, typename CONFIG_T>
     //Mix the stat with the previous state
     for(int iacc = 0; iacc < (CONFIG_T::n_state); iacc++) {
     #pragma HLS UNROLL
-      h_state[iacc] =  (res_T)(tmpres_h[iacc]*(1-tmpres_zr[iacc]) + h_state[iacc]*tmpres_zr[iacc]);
-      h_newstate[iacc] = h_state[iacc];
+      // h_state[iacc] =  (res_T)(tmpres_h[iacc]*(1-tmpres_zr[iacc]) + h_state[iacc]*tmpres_zr[iacc]);
+      // h_newstate[iacc] = h_state[iacc];
+      h_newstate[iacc] =  (res_T)(tmpres_h[iacc]*(1-tmpres_zr[iacc]) + h_newstate[iacc]*tmpres_zr[iacc]);
+      // h_newstate[iacc] = h_state[iacc];
     }
 }
 
