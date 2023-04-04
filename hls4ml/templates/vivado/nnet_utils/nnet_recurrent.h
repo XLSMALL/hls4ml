@@ -451,9 +451,23 @@ template<class data_T, class res_T, typename CONFIG_T>
     // nnet::dense<res_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config2>(h_state, tmpres_state_zr, param_zr, param_br);
     nnet::dense<res_T, typename CONFIG_T::accum_t, typename CONFIG_T::mult_config2>(h_newstate, tmpres_state_zr, param_zr, param_br);
 
-    // std::cout << "value from gru_staic h_newstate: " << std::endl;
-    // nnet::print_result<data_T, CONFIG_T::n_state>(h_newstate, std::cout);
-    // std::cout << " " << std::endl;
+    std::cout << "value from gru_staic h_newstate: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state>(h_newstate, std::cout);
+    std::cout << " " << std::endl;
+
+    std::cout << "value from gru_staic tmpres_state_zr: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state*3>(tmpres_state_zr, std::cout);
+    std::cout << " " << std::endl;
+
+    std::cout << "value from gru_staic param_zr: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state*3*CONFIG_T::n_state>(param_zr, std::cout);
+    std::cout << " " << std::endl;
+
+    std::cout << "value from gru_staic param_br: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state*3>(param_br, std::cout);
+    std::cout << " " << std::endl;
+
+
 
     // Adding the individual vectors from the multiplication of tmpres = Wx*x(t); tmpres_state_zr = Wh*h(t-1); tmpres initialized with biases -- DONE
     for(int iacc = 0; iacc < (2*CONFIG_T::n_state); iacc++) {
@@ -465,6 +479,13 @@ template<class data_T, class res_T, typename CONFIG_T>
     // Activation function Sub layer -- START
     CONFIG_T::template activation_recr<typename CONFIG_T::accum_t, typename CONFIG_T::weight_t, typename CONFIG_T::ACT_CONFIG_GRU>::activation(inputacc_zr, tmpres_zr);
 
+    std::cout << "value from ACT_CONFIG_Sigmod inputacc_zr: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state*2>(inputacc_zr, std::cout);
+    std::cout << " " << std::endl;
+
+    std::cout << "value from ACT_CONFIG_Sigmod tmpres_zr: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state*2>(tmpres_zr, std::cout);
+    std::cout << " " << std::endl;
     // Activation function Sub layer -- END
 
     // Hadamrd product of r(t) = inputacc_zr[2*n_state:n_state] and h(t-1) = h_newstate
@@ -483,6 +504,13 @@ template<class data_T, class res_T, typename CONFIG_T>
     //Now run the activation on this guy
     CONFIG_T::template activation<typename CONFIG_T::accum_t, typename CONFIG_T::weight_t, typename CONFIG_T::ACT_CONFIG_T>::activation(inputacc_h, tmpres_h);
 
+    std::cout << "value from ACT_CONFIG_TanH inputacc_h: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state>(inputacc_h, std::cout);
+    std::cout << " " << std::endl;
+
+    std::cout << "value from ACT_CONFIG_TanH tmpres_h: " << std::endl;
+    nnet::print_result<data_T, CONFIG_T::n_state>(tmpres_h, std::cout);
+    std::cout << " " << std::endl;
     //Mix the stat with the previous state
     for(int iacc = 0; iacc < (CONFIG_T::n_state); iacc++) {
     #pragma HLS UNROLL
