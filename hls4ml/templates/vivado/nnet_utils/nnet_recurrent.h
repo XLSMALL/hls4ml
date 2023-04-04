@@ -553,7 +553,7 @@ template<class data_T, class res_T, typename CONFIG_T>
 
       res_T   h_state[CONFIG_T::n_state];
       data_T  data_in[CONFIG_T::n_in];
-      bool    reset_state = true;
+      bool    reset_state = false;
 
       #pragma HLS ARRAY_PARTITION variable=h_state complete
       #pragma HLS ARRAY_PARTITION variable=data_in complete
