@@ -86,7 +86,6 @@ encoder.layers[3].set_weights(fix_weight_model.layers[3].get_weights())
 
 # input_dense_shape = (1,)  # Shape of the 'input_dense' tensor
 # input_dense_data = np.random.rand(batch_size, *input_dense_shape)
-# print("input",input_dense_data)
 
 
 # inputs = Input(shape=input_shape)
@@ -150,6 +149,7 @@ hls_model = hls4ml.converters.convert_from_keras_model(encoder,
                                                        part='xc7z020clg400-1')
 print("done")
 hls_model.compile()
+# hls_out = hls_model.predict(inputs_data)
 hls_out = hls_model.predict([input_dense_data,inputs_data])
 print(hls_out)
 

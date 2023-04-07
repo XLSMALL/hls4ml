@@ -58,8 +58,8 @@ struct bidirectional_config
 template<class data_T, class res_T, typename CONFIG_T>
   void bidirectional(
       data_T data_in[CONFIG_T::n_sequence*CONFIG_T::n_in],
-      //new
-      data_T initial_state[CONFIG_T::n_state],
+      // for external initial_state if needed
+      // data_T initial_state[CONFIG_T::n_state],
       res_T  data_out[CONFIG_T::n_out],
 	    typename CONFIG_T::weight_t     bweight     [CONFIG_T::n_state*3*CONFIG_T::n_in],
 	    typename CONFIG_T::weight_t     brecweight  [CONFIG_T::n_state*3*CONFIG_T::n_state],
@@ -70,20 +70,15 @@ template<class data_T, class res_T, typename CONFIG_T>
 	    typename CONFIG_T::bias_t       fbias       [CONFIG_T::n_state*3],
       typename CONFIG_T::bias_t       fbias_r     [CONFIG_T::n_state*3]
   ){
-    // res_T reverse_in      [CONFIG_T::n_sequence*CONFIG_T::n_in];
+    data_T initial_state[CONFIG_T::n_state];
     data_T temp_reverse    [CONFIG_T::n_sequence*CONFIG_T::n_in];
     res_T  forwardgru_out  [CONFIG_T::n_sequence_out*CONFIG_T::n_state];
     res_T  backwardgru_out [CONFIG_T::n_sequence_out*CONFIG_T::n_state];
 
-    // for(int k=0; CONFIG_T::n_state)
-    // res_T  temp [CONFIG_T::n_out];
-    // data_T reverse_in [CONFIG_T::n_sequence*CONFIG_T::n_in];
-    // res_T  temp [CONFIG_T::n_state];
-    // res_T temp_reverse [CONFIG_T::n_sequence*CONFIG_T::n_in];
-    
-    // for(int i=0; i<(CONFIG_T::n_sequence*CONFIG_T::n_in); i++){
-    //   reverse_in[i] = data_in[(CONFIG_T::n_sequence*CONFIG_T::n_in) - (i+i)];
-    // }
+    for (int i=0; i<(CONFIG_T::n_state); i++){
+      initial_state[i] = 0;
+    }
+
     for (int i=0; i<(CONFIG_T::n_sequence); i++){
       for(int j=0; j<(CONFIG_T::n_in); j++){
         temp_reverse[(i*(CONFIG_T::n_in))+j] = data_in[(CONFIG_T::n_sequence-(i+1))*(CONFIG_T::n_in) + j];
@@ -99,13 +94,6 @@ template<class data_T, class res_T, typename CONFIG_T>
 
     nnet::gru_stack<data_T, res_T, CONFIG_T>(data_in, initial_state, forwardgru_out, fweight, frecweight, fbias, fbias_r);
     nnet::gru_stack<data_T, res_T, CONFIG_T>(temp_reverse, initial_state, backwardgru_out, bweight, brecweight, bbais, bbias_r);
-    // for (int j = 0; j < (CONFIG_T::n_state); j++){
-    //   data_out[j] = forwardgru_out[j]; // 72*64 + j
-
-
-    // for(int i=0; i<(CONFIG_T::n_sequence_out*CONFIG_T::n_state); i++){
-    //   temp_bout[i] = backwardgru_out[CONFIG_T::n_sequence_out*CONFIG_T::n_state - (i+1)];
-    // }
 
     for(int j=0; j<(CONFIG_T::n_out); j++){
        data_out[j] = forwardgru_out[(CONFIG_T::n_sequence_out-1)* (CONFIG_T::n_state)+j];

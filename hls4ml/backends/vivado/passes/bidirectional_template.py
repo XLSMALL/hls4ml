@@ -117,11 +117,11 @@ bidir_config_template = """struct config{index} : nnet::bidirectional_config {{
 
 }};\n"""
 
-#weights & bias add
-bidir_function_template = 'nnet::bidirectional<{input_t}, {output_t}, {config}>({input}, {initial_state}, {output}, {wb_1}, {wrb_1}, {b_b}, {br_b},{wf_2},{wrf_2}, {b_f}, {br_f});'
-
+# weights & bias add
+# for external input of initial_state if needed
+# bidir_function_template = 'nnet::bidirectional<{input_t}, {output_t}, {config}>({input}, {initial_state}, {output}, {wb_1}, {wrb_1}, {b_b}, {br_b},{wf_2},{wrf_2}, {b_f}, {br_f});'
+bidir_function_template = 'nnet::bidirectional<{input_t}, {output_t}, {config}>({input}, {output}, {wb_1}, {wrb_1}, {b_b}, {br_b},{wf_2},{wrf_2}, {b_f}, {br_f});'
 bidirectional_include_list = ['nnet_utils/nnet_bidirectional.h', 'nnet_utils/nnet_recurrent.h']
-print("template-----------------------------------------------")
 
 class BidirectionalConfigTemplate(LayerConfigTemplate):
     def __init__(self):
@@ -147,8 +147,8 @@ class BidirectionalConfigTemplate(LayerConfigTemplate):
         params['recr_act_t'] = '{}_config{}_recr'.format(node.get_attr('recurrent_activation'), node.index)
         params['act_t'] = '{}_config{}'.format(node.get_attr('activation'), node.index)
         params['n_state'] = params['n_out_forward']
-        if(params['initial_state']==0):
-            params['initial_state']==0
+        # if(params['initial_state']==0):
+        #     params['initial_state']==0
 
         if params['layer_type']=='gru':
             n_recr_mult = 3
@@ -166,7 +166,7 @@ class BidirectionalConfigTemplate(LayerConfigTemplate):
             # params['n_state'] = node.get_output_variable().dim_names[0]
             # print(node.get_output_variable().dim_names[0])
         params['n_out'] = node.get_output_variable().dim_names[0]
-        print("template----------------------------------------------check")
+        # print("template----------------------------------------------check")
         # params['config_mult_t1'] = 'config{}_1'.format(node.index)
         # params['config_mult_t2'] = 'config{}_2'.format(node.index)
         # params['recr_act_t'] = '{}_config{}_recr'.format(node.get_attr('recurrent_activation'), node.index)
@@ -205,8 +205,8 @@ class BidirectionalConfigTemplate(LayerConfigTemplate):
         flayer_params['recr_act_t'] = '{}_config{}_recr'.format(node.get_attr('recurrent_activation'), node.index)
         flayer_params['act_t'] = '{}_config{}'.format(node.get_attr('activation'), node.index)
         flayer_params['strategy'] = node.get_attr('strategy')
-        if(params['initial_state']==0):
-            params['initial_state']==0
+        # if(params['initial_state']==0):
+        #     params['initial_state']==0
 
         flayer_config = self.flayer_template.format(**flayer_params)
 
@@ -234,8 +234,8 @@ class BidirectionalConfigTemplate(LayerConfigTemplate):
         blayer_params['recr_act_t'] = '{}_config{}_recr'.format(node.get_attr('recurrent_activation'), node.index)
         blayer_params['act_t'] = '{}_config{}'.format(node.get_attr('activation'), node.index)
         blayer_params['strategy'] = node.get_attr('strategy')
-        if(params['initial_state']==0):
-            params['initial_state']==0
+        # if(params['initial_state']==0):
+        #     params['initial_state']==0
         blayer_config = self.blayer_template.format(**blayer_params)
         ######################## correct modify under ######################################
         ####################################################################################
@@ -290,7 +290,7 @@ class BidirectionalConfigTemplate(LayerConfigTemplate):
         bi_mult_config2 = self.mult2_template.format(**mult_params2)
 
 
-        print("template-----------------------------------------------1111")
+        # print("template-----------------------------------------------1111")
     
         return bi_mult_config1 + '\n' + bi_mult_config2 + '\n' + bi_recr_act_config + '\n' + bi_act_config + '\n' + flayer_config + '\n' + blayer_config + '\n' + bidir_config # recr_config to bidir_config
 
@@ -301,7 +301,8 @@ class BidirectionalFunctionTemplate(FunctionCallTemplate):
 
     def format(self, node):
         params = self._default_function_params(node)
-        params['initial_state'] = node.get_input_variable(node.inputs[0]).name
+        # for external input of initial_state if needed
+        # params['initial_state'] = node.get_input_variable(node.inputs[0]).name 
         params['wb_1'] = node.get_weights('backward_gru_1_gru_cell_1_weight').name
         params['wrb_1'] = node.get_weights('backward_gru_1_gru_cell_1_recurrent_weight').name
         params['b_b'] = node.get_weights('backward_gru_1_gru_cell_1_bias').name
@@ -314,7 +315,7 @@ class BidirectionalFunctionTemplate(FunctionCallTemplate):
         params['recurrent_activation'] = node.get_attr('recurrent_activation')
         params['recr_type'] = node.get_attr('layer_type')
   # pass params into function template
-        print("template-----------------------------------------------pass")
+        # print("template-----------------------------------------------pass")
         return self.template.format(**params)
 
 

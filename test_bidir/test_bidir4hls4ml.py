@@ -21,6 +21,7 @@ backward_layer = GRU(2, time_major=False,
                          return_state= True, go_backwards=True, 
                          kernel_regularizer=regularizer, kernel_initializer=initializer)
 x = Bidirectional(forward_layer, backward_layer=backward_layer)(inputLayer)[0] ###remeber to only take [0]!!!!!
+x = Dense(4)(x)
 # x = GRU(4, time_major=False, 
 #                         return_sequences= True, kernel_regularizer=regularizer, 
 #                         kernel_initializer=initializer)(inputLayer)
