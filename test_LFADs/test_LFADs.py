@@ -45,6 +45,7 @@ def create_model(inputs2model, inputs2decoder, initializer, regularizer):
 
 LFADs_keras = create_model(inputs2model,inputs2decoder, initializer, regularizer)
 LFADs_keras.summary()
+LFADs_keras.compile()
 
 # LFADs = tf.keras.models.load_model("/home/xiaohan/HLS4ML_side_branch/hls4ml/test_LFADs/3_3_flatten.h5")
 # LFADs.summary()
