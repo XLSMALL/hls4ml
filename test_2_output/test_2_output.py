@@ -23,13 +23,22 @@ input_dense_data = np.random.rand(batch_size, *input_dense_shape)
 # input_dense_data = np.zeros((batch_size, *input_dense_shape))
 
 
+# inputs = Input(shape=input_shape)
+# input_dense = Input(shape=input_dense_shape)
+# dense = Dense(1)(input_dense)
+# gru_layer = GRU(units=1, return_sequences=True)(inputs)
+# gru_layer_1 = GRU(1)(dense)
+# dense_1 = Dense(2)(gru_layer_1)
+# dense_2 = Dense(1)(gru_layer)
+# dense_3 = Dense(1)(dense_1)
+# model_dense = tf.keras.Model(inputs=[input_dense,inputs], outputs=[dense_2, dense_3])
+
 inputs = Input(shape=input_shape)
 input_dense = Input(shape=input_dense_shape)
 dense = Dense(1)(input_dense)
-# gru_layer = GRU(units=1, return_sequences=True)(inputs, dense)
-dense_1 = Dense(2)(inputs)
-dense_2 = Dense(1)(dense)
-dense_3 = Dense(1)(dense_1)
+gru_layer = GRU(units=1, return_sequences=True)(inputs, dense)
+dense_2 = Dense(1)(gru_layer)
+dense_3 = Dense(1)(dense_2)
 model_dense = tf.keras.Model(inputs=[input_dense,inputs], outputs=[dense_2, dense_3])
 
 
@@ -54,9 +63,9 @@ hls_model = hls4ml.converters.convert_from_keras_model(model_dense,
                                                        part='xc7z020clg400-1')
 print("done")
 hls_model.compile()
-# hls_out = hls_model.predict(inputs_data)
+hls_out = hls_model.predict([input_dense_data,inputs_data])
 # hls_out = hls_model.predict([input_dense_data,inputs_data])
-# print(hls_out)
+print(hls_out)
 
 
 

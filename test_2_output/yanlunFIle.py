@@ -7,7 +7,8 @@ x1 = Conv2D(6,(3,3),padding='same')(inp1)
 x2 = Conv2D(4,(3,3),padding='same')(inp2) 
 x1 = Flatten()(x1)
 x2 = Flatten()(x2)
-model = Model(inputs=[inp1, inp2], outputs=[x1,x2])
+x3 = Concatenate()([x1, x2])
+model = Model(inputs=[inp1, inp2], outputs=x3)
 model.summary()
 
 from tensorflow.keras import Model

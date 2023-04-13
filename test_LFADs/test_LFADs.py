@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Dropout, LSTM, Flatten, GRU, Activation, Embedding, Bidirectional
+from tensorflow.keras.layers import Input, Dense, Dropout, LSTM, Flatten, GRU, Activation, Embedding, Bidirectional, Flatten, Concatenate
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.models import Model
 import hls4ml
@@ -41,7 +41,14 @@ def create_model(inputs2model, inputs2decoder, initializer, regularizer):
   x = Dropout(0.05, name = 'postdecoder_dropout')(x)
   z = Dense(4, use_bias = False, kernel_regularizer=regularizer, kernel_initializer=initializer, name='dense')(x)
   log_f = Dense(70, kernel_regularizer=regularizer, kernel_initializer=initializer, name='nerual_dense')(z)
-  return Model(inputs = [inputLayer,input_decoder], outputs =[z, log_f])
+  # z = Flatten()(z)
+  # temp_1 = Dense(5,name='dense_temp1')(z)
+  # log_f = Flatten()(log_f)
+  # temp_2 = Dense(5,name='dense_temp2')(log_f)
+  out = Concatenate()([z,log_f])
+
+ # return Model(inputs = [inputLayer,input_decoder], outputs =[z, log_f])
+  return Model(inputs = [inputLayer,input_decoder], outputs =out)
 
 LFADs_keras = create_model(inputs2model,inputs2decoder, initializer, regularizer)
 LFADs_keras.summary()
