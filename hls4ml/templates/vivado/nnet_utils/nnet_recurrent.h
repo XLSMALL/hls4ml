@@ -1,4 +1,4 @@
- 
+
 //
 //    rfnoc-hls-neuralnet: Vivado HLS code for neural-net building blocks
 //
@@ -746,6 +746,52 @@ template<class data_T, class res_T, typename CONFIG_T>
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<class data_T, class res_T, typename CONFIG_T>
+  void gru_stack_for_bidirectional(
+      data_T data[CONFIG_T::n_sequence][CONFIG_T::n_in],
+      res_T  res[CONFIG_T::n_sequence_out*CONFIG_T::n_state],
+      typename CONFIG_T::weight_t     param   [CONFIG_T::n_state*3*CONFIG_T::n_in],
+      typename CONFIG_T::weight_t     param_zr[CONFIG_T::n_state*3*CONFIG_T::n_state],
+      typename CONFIG_T::bias_t       param_b [CONFIG_T::n_state*3],
+      typename CONFIG_T::bias_t       param_br [CONFIG_T::n_state*3]
+      ) {
+
+    res_T  h_newstate[CONFIG_T::n_state];
+    #pragma HLS ARRAY_PARTITION variable=h_newstate complete
+    for(int ii = 0; ii < CONFIG_T::n_state; ii++) {
+      #pragma HLS UNROLL
+      h_newstate[ii] = 0;
+    }
+
+    bool reset_state = true;
+
+    DataPropagation: for(int i_in = 0; i_in < CONFIG_T::n_sequence; i_in++) {
+      if (CONFIG_T::n_sequence*CONFIG_T::n_in / CONFIG_T::n_in > 1) {
+          // #pragma HLS PIPELINE
+      }
+      if (CONFIG_T::use_static)
+        nnet::gru_static<data_T, res_T, CONFIG_T>(reset_state,data[i_in],h_newstate,param,param_zr,param_b, param_br);
+      //else
+        //nnet::gru<data_T, res_T, CONFIG_T>(reset_state,data_in,h_newstate,param,param_zr,param_b, param_br);
+      if (CONFIG_T::n_sequence_out > 1){
+        ResPack_sequences: for (int i_pack = 0; i_pack < CONFIG_T::n_out; i_pack++) {
+            #pragma HLS UNROLL
+            //res_stream[i_pack].write(h_newstate[i_pack]);
+           res[i_in*CONFIG_T::n_out+i_pack] = h_newstate[i_pack];
+        }
+      }
+      reset_state = false;
+    }
+
+    if (CONFIG_T::n_sequence_out == 1){
+        ResPack: for (int i_pack = 0; i_pack < CONFIG_T::n_out; i_pack++) {
+            #pragma HLS UNROLL
+            //res_stream[i_pack].write(h_newstate[i_pack]);
+            res[i_pack] = h_newstate[i_pack];
+        }
+    }
+
+}
 
 
 }//end namespace
