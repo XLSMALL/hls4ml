@@ -120,6 +120,61 @@ template<class data_T, class res_T, typename CONFIG_T>
 
     }
 
+template<class data_T, class res_T, typename CONFIG_T>
+  void bidirectional(
+      hls::stream<data_T> data_in[CONFIG_T::n_in],
+      hls::stream<res_T> data_out[CONFIG_T::n_out],
+	    typename CONFIG_T::weight_t     bweight     [CONFIG_T::n_state*3*CONFIG_T::n_in],
+	    typename CONFIG_T::weight_t     brecweight  [CONFIG_T::n_state*3*CONFIG_T::n_state],
+	    typename CONFIG_T::bias_t       bbais       [CONFIG_T::n_state*3],
+      typename CONFIG_T::bias_t       bbias_r     [CONFIG_T::n_state*3],
+      typename CONFIG_T::weight_t     fweight     [CONFIG_T::n_state*3*CONFIG_T::n_in],
+	    typename CONFIG_T::weight_t     frecweight  [CONFIG_T::n_state*3*CONFIG_T::n_state],
+	    typename CONFIG_T::bias_t       fbias       [CONFIG_T::n_state*3],
+      typename CONFIG_T::bias_t       fbias_r     [CONFIG_T::n_state*3]
+  ){
+
+
+    data_T temp_normal[CONFIG_T::n_sequence][CONFIG_T::n_in];
+    #pragma HLS ARRAY_PARTITION variable=temp_normal complete dim=2
+    data_T temp_reverse[CONFIG_T::n_sequence][CONFIG_T::n_in];
+    #pragma HLS ARRAY_PARTITION variable=temp_reverse complete dim=2
+
+    res_T forwardgru_out[CONFIG_T::n_sequence_out*CONFIG_T::n_state];
+    #pragma HLS ARRAY_PARTITION variable=forwardgru_out cyclic factor=CONFIG_T::n_state
+    res_T backwardgru_out[CONFIG_T::n_sequence_out*CONFIG_T::n_state];
+    #pragma HLS ARRAY_PARTITION variable=backwardgru_out cyclic factor=CONFIG_T::n_state
+
+    for (int i=0; i<(CONFIG_T::n_sequence); i++){
+        #pragma HLS PIPELINE
+        for(int j=0; j<(CONFIG_T::n_in); j++){
+            #pragma HLS UNROLL
+            data_T temp = data_in[j].read();
+            temp_normal[i][j] = temp;
+            temp_reverse[(CONFIG_T::n_sequence)-i-1][j] = temp;
+        }
+    }
+
+    nnet::gru_stack_for_bidirectional<data_T, res_T, typename CONFIG_T::config_rnn_layer_f>(temp_normal, forwardgru_out, fweight, frecweight, fbias, fbias_r);
+    nnet::gru_stack_for_bidirectional<data_T, res_T, typename CONFIG_T::config_rnn_layer_b>(temp_reverse, backwardgru_out, bweight, brecweight, bbais, bbias_r);
+
+
+    res_T out_tmpt;
+    for(int j=0; j<(CONFIG_T::n_out); j++){
+        #pragma HLS UNROLL
+        if(j <CONFIG_T::n_state ){
+            out_tmpt = forwardgru_out[(CONFIG_T::n_sequence_out-1)* (CONFIG_T::n_state)+j];
+        }
+        else {
+            out_tmpt = backwardgru_out[(CONFIG_T::n_sequence_out-1)* (CONFIG_T::n_state)+j-(CONFIG_T::n_state)];
+        }
+        data_out[j].write(out_tmpt);
+    }
+
+}
+
+
+
   }
 #endif
 
